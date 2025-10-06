@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Tic Tac Toe ++</title>
+  <style>
+    :root {
+      --bg: #1e1e2f;
+      --primary: #f1f1f1;
+      --accent: #ff6b81;
+      --cell-bg: #2e2e48;
+      --glass: rgba(255, 255, 255, 0.05);
+      --shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: var(--bg);
+      color: var(--primary);
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .container {
+      text-align: center;
+      background: var(--glass);
+      box-shadow: var(--shadow);
+      padding: 2rem;
+      border-radius: 15px;
+      width: 95%;
+      max-width: 400px;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+    }
+
+    h1 span {
+      color: var(--accent);
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin: 20px auto;
+    }
+
+    .cell {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      font-size: 2.5rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: var(--cell-bg);
+      color: var(--accent);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: transform 0.2s, background 0.2s;
+    }
+
+    .cell:hover {
+      transform: scale(1.05);
+      background: #3a3a5c;
+    }
+
+    .controls, .scoreboard, .status {
+      margin: 10px 0;
+    }
+
+    button {
+      margin: 5px;
+      padding: 10px 15px;
+      font-size: 1rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      background: var(--accent);
+      color: #fff;
+      transition: 0.3s ease;
+    }
+
+    button:hover {
+      opacity: 0.85;
+    }
+
+    @media (max-width: 400px) {
+      .cell {
+        font-size: 2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Tic Tac Toe <span>++</span></h1>
+
+    <div class="controls">
+      <button id="modeToggle">🎮 Player vs Player</button>
+      <button id="emojiToggle">🔤 Use Emojis</button>
+    </div>
+
+    <div class="scoreboard">
+      <div>X / Player 1: <span id="scoreX">0</span></div>
+      <div>O / Player 2: <span id="scoreO">0</span></div>
+    </div>
+
+    <div class="board" id="board">
+      <!-- Cells will be added here -->
+    </div>
+
+    <div class="status" id="status">Your move, Player X</div>
+
+    <button id="reset">🔄 Reset Game</button>
+  </div>
+
+  <script>
+    const board = document.getElementById("board");
+    const status = document.getElementById("status");
+    const scoreX = document.getElementById("scoreX");
+    const scoreO = document.getElementById("scoreO");
+    const resetBtn = document.getElementById("reset");
+    const emojiToggle = document.getElementById("emojiToggle");
+    const modeToggle = document.getElementById("modeToggle");
+
+    let cells = [];
+    let currentPlayer = "X";
+    let isEmoji = false;
+    let isBot = false;
+    let gameActive = true;
+    let scores = { X: 0, O: 0 };
+    const EMOJIS = ["🐱", "🐶"];
+
+    function createBoard() {
+      board.innerHTML = "";
+      cells = [];
+      for (let i = 0; i < 9; i++) {
+        const cell = document.createElement("div");
+        cell.classList.add("cell");
+        cell.dataset.index = i;
+        board.appendChild(cell);
+        cells.push("");
+        cell.addEventListener("click", () => handleMove(i));
+      }
+    }
+
+    function handleMove(index) {
+      if (!gameActive || cells[index]) return;
+
+      cells[index] = currentPlayer;
+      updateBoard();
+
+      if (checkWin(currentPlayer)) {
+        status.textContent = `🎉 Player ${symbol(currentPlayer)} Wins!`;
+        scores[currentPlayer]++;
+        updateScore();
+        gameActive = false;
+      } else if (cells.every(Boolean)) {
+        status.textContent = "🤝 It's a Draw!";
+        gameActive = false;
+      } else {
+        currentPlayer = currentPlayer === "X" ? "O" : "X";
+        status.textContent = `Your move, Player ${symbol(currentPlayer)}`;
+        if (isBot && currentPlayer === "O") {
+          setTimeout(botMove, 500);
+        }
+      }
+    }
+
+    function botMove() {
+      let emptyIndexes = cells.map((v, i) => (v ? null : i)).filter(i => i !== null);
+      let random = emptyIndexes[Math.floor(Math.random() * emptyIndexes.length)];
+      handleMove(random);
+    }
+
+    function symbol(player) {
+      if (isEmoji) return player === "X" ? EMOJIS[0] : EMOJIS[1];
+      return player;
+    }
+
+    function updateBoard() {
+      board.querySelectorAll(".cell").forEach((cell, i) => {
+        cell.textContent = cells[i] ? symbol(cells[i]) : "";
+      });
+    }
+
+    function checkWin(p) {
+      const wins = [
+        [0,1,2], [3,4,5], [6,7,8],
+        [0,3,6], [1,4,7], [2,5,8],
+        [0,4,8], [2,4,6]
+      ];
+      return wins.some(line => line.every(i => cells[i] === p));
+    }
+
+    function updateScore() {
+      scoreX.textContent = scores["X"];
+      scoreO.textContent = scores["O"];
+    }
+
+    resetBtn.addEventListener("click", () => {
+      cells = [];
+      currentPlayer = "X";
+      gameActive = true;
+      status.textContent = `Your move, Player ${symbol(currentPlayer)}`;
+      createBoard();
+    });
+
+    emojiToggle.addEventListener("click", () => {
+      isEmoji = !isEmoji;
+      emojiToggle.textContent = isEmoji ? "🔠 Use X/O" : "🔤 Use Emojis";
+      updateBoard();
+    });
+
+    modeToggle.addEventListener("click", () => {
+      isBot = !isBot;
+      modeToggle.textContent = isBot ? "🧠 vs Bot" : "🎮 Player vs Player";
+      resetBtn.click();
+    });
+
+    createBoard();
+  </script>
+</body>
+</html>
